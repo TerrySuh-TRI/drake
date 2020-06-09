@@ -14,6 +14,8 @@
 #include "drake/multibody/parsing/parser.h"
 #include "drake/multibody/tree/prismatic_joint.h"
 #include "drake/multibody/tree/revolute_joint.h"
+#include "drake/multibody/tree/linear_bushing_roll_pitch_yaw.h"
+#include "drake/multibody/tree/linear_spring_damper.h"
 #include "drake/systems/controllers/inverse_dynamics_controller.h"
 #include "drake/systems/framework/diagram_builder.h"
 #include "drake/systems/primitives/adder.h"
@@ -43,6 +45,8 @@ using multibody::MultibodyPlant;
 using multibody::PrismaticJoint;
 using multibody::RevoluteJoint;
 using multibody::SpatialInertia;
+using multibody::LinearSpringDamper;
+using multibody::LinearBushingRollPitchYaw;
 
 namespace internal {
 
@@ -260,29 +264,51 @@ void ManipulationStation<T>::SetupManipulationClassStation(
                                   "amazon_table", X_WT, plant_);
   }
 
-  // Add the cupboard.
-  {
-    const double dx_table_center_to_robot_base = 0.3257;
-    const double dz_table_top_robot_base = 0.0127;
-    const double dx_cupboard_to_table_center = 0.43 + 0.15;
-    const double dz_cupboard_to_table_center = 0.02;
-    const double cupboard_height = 0.815;
-
-    const std::string sdf_path = FindResourceOrThrow(
-        "drake/examples/manipulation_station/models/cupboard.sdf");
-
-    RigidTransform<double> X_WC(
-        RotationMatrix<double>::MakeZRotation(M_PI),
-        Vector3d(dx_table_center_to_robot_base + dx_cupboard_to_table_center, 0,
-                 dz_cupboard_to_table_center + cupboard_height / 2.0 -
-                     dz_table_top_robot_base));
-    internal::AddAndWeldModelFrom(sdf_path, "cupboard", plant_->world_frame(),
-                                  "cupboard_body", X_WC, plant_);
-  }
 
   // Add the default iiwa/wsg models.
   AddDefaultIiwa(collision_model);
   AddDefaultWsg();
+
+  // Weld cylinder to WSG model 
+  {
+    const std::string sdf_path = FindResourceOrThrow(
+      "drake/examples/manipulation_station/models/cylinder.sdf");
+    RigidTransform<double> X_ET(RollPitchYaw<double>(0.,0.,0.),
+     Vector3d(0.0, 0.0, 0.2));
+
+    
+    multibody::Parser parser(plant_);
+    const multibody::ModelInstanceIndex new_model =
+      parser.AddModelFromFile(sdf_path, "cylinder");
+    const auto& child_frame = plant_->GetFrameByName("base_link", new_model);
+    
+    const double k_xyz = 10000.0;
+    const double d_xyz = 100.0;
+    const double k_rpy = 10000.0;
+    const double d_rpy = 100.0;
+
+    const Vector3d force_stiffness_constants{k_xyz, k_xyz, k_xyz};
+    const Vector3d force_damping_constants{d_xyz, d_xyz, d_xyz};
+    const Vector3d torque_stiffness_constants{k_rpy, k_rpy, k_rpy};
+    const Vector3d torque_damping_constants{d_rpy, d_rpy, d_rpy};
+
+    plant_->AddForceElement<LinearBushingRollPitchYaw>();
+    // (
+      //*wsg_model_.parent_frame, child_frame, 
+      //torque_stiffness_constants, torque_damping_constants, 
+      //force_stiffness_constants, force_damping_constants);
+
+    //auto bushing_ = LinearBushingRollPitchYaw<T>(
+    //  *wsg_model_.parent_frame, child_frame,
+    //  torque_stiffness_constants, torque_damping_constants,
+    //  force_stiffness_constants, force_damping_constants
+    //);
+
+
+    //internal::AddAndWeldModelFrom(sdf_path, "tool", *wsg_model_.parent_frame, "base_link", X_ET, plant_);
+  }
+
+
 
   // Add default cameras.
   {
@@ -939,6 +965,8 @@ void ManipulationStation<T>::AddDefaultWsg() {
   RegisterWsgControllerModel(sdf_path, wsg_instance, link7,
                              plant_->GetFrameByName("body", wsg_instance),
                              X_7G);
+
+  
 }
 
 }  // namespace manipulation_station
