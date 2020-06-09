@@ -292,11 +292,10 @@ void ManipulationStation<T>::SetupManipulationClassStation(
     const Vector3d torque_stiffness_constants{k_rpy, k_rpy, k_rpy};
     const Vector3d torque_damping_constants{d_rpy, d_rpy, d_rpy};
 
-    plant_->AddForceElement<LinearBushingRollPitchYaw>();
-    // (
-      //*wsg_model_.parent_frame, child_frame, 
-      //torque_stiffness_constants, torque_damping_constants, 
-      //force_stiffness_constants, force_damping_constants);
+    plant_->AddForceElement<LinearBushingRollPitchYaw>(
+      *wsg_model_.parent_frame, child_frame, 
+      torque_stiffness_constants, torque_damping_constants, 
+      force_stiffness_constants, force_damping_constants);
 
     //auto bushing_ = LinearBushingRollPitchYaw<T>(
     //  *wsg_model_.parent_frame, child_frame,
