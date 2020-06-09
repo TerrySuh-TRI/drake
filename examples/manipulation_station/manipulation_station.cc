@@ -15,7 +15,7 @@
 #include "drake/multibody/tree/prismatic_joint.h"
 #include "drake/multibody/tree/revolute_joint.h"
 #include "drake/multibody/tree/linear_bushing_roll_pitch_yaw.h"
-#include "drake/multibody/tree/linear_spring_damper.h"
+#include "drake/multibody/tree/fixed_offset_frame.h"
 #include "drake/systems/controllers/inverse_dynamics_controller.h"
 #include "drake/systems/framework/diagram_builder.h"
 #include "drake/systems/primitives/adder.h"
@@ -45,8 +45,8 @@ using multibody::MultibodyPlant;
 using multibody::PrismaticJoint;
 using multibody::RevoluteJoint;
 using multibody::SpatialInertia;
-using multibody::LinearSpringDamper;
 using multibody::LinearBushingRollPitchYaw;
+using multibody::FixedOffsetFrame;
 
 namespace internal {
 
@@ -275,34 +275,40 @@ void ManipulationStation<T>::SetupManipulationClassStation(
       "drake/examples/manipulation_station/models/cylinder.sdf");
     RigidTransform<double> X_ET(RollPitchYaw<double>(0.,0.,0.),
      Vector3d(0.0, 0.0, 0.2));
-
+    RigidTransform<double> X_ET_S(RollPitchYaw<double>(0.0, 0.0, 0.0),
+     Vector3d(0.0, 0.0, -0.2));
     
     multibody::Parser parser(plant_);
     const multibody::ModelInstanceIndex new_model =
       parser.AddModelFromFile(sdf_path, "cylinder");
     const auto& child_frame = plant_->GetFrameByName("base_link", new_model);
-    
-    const double k_xyz = 10000.0;
-    const double d_xyz = 100.0;
-    const double k_rpy = 10000.0;
-    const double d_rpy = 100.0;
+    const auto tool_frame = FixedOffsetFrame("tool_frame", *wsg_model_.parent_frame,
+     X_ET_S);
+
+    // Set Freebody Pose away from the world....
+    const auto indices = plant_->GetBodyIndices(new_model);
+    DRAKE_DEMAND(indices.size() == 1);
+    object_ids_.push_back(indices[0]);
+    const RigidTransform<double> X_WObject(Vector3d(0.5, 0.0, 0.1)); 
+    object_poses_.push_back(X_WObject);
+
+
+    // Declare gains and damping parameters for force element  
+    const double k_xyz = 100.0;
+    const double d_xyz = 10.0;
+    const double k_rpy = 0.0;
+    const double d_rpy = 0.0;
 
     const Vector3d force_stiffness_constants{k_xyz, k_xyz, k_xyz};
     const Vector3d force_damping_constants{d_xyz, d_xyz, d_xyz};
     const Vector3d torque_stiffness_constants{k_rpy, k_rpy, k_rpy};
     const Vector3d torque_damping_constants{d_rpy, d_rpy, d_rpy};
 
-    plant_->AddForceElement<LinearBushingRollPitchYaw>(
-      *wsg_model_.parent_frame, child_frame, 
+    // Add force element between object frame and tool frame 
+    plant_->template AddForceElement<LinearBushingRollPitchYaw>(
+      tool_frame, child_frame, 
       torque_stiffness_constants, torque_damping_constants, 
       force_stiffness_constants, force_damping_constants);
-
-    //auto bushing_ = LinearBushingRollPitchYaw<T>(
-    //  *wsg_model_.parent_frame, child_frame,
-    //  torque_stiffness_constants, torque_damping_constants,
-    //  force_stiffness_constants, force_damping_constants
-    //);
-
 
     //internal::AddAndWeldModelFrom(sdf_path, "tool", *wsg_model_.parent_frame, "base_link", X_ET, plant_);
   }
