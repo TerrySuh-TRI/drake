@@ -154,7 +154,8 @@ class ManipulationStation : public systems::Diagram<T> {
   /// @note Only one of the `Setup___()` methods should be called.
   /// @param collision_model Determines which sdf is loaded for the IIWA.
   void SetupManipulationClassStation(
-      IiwaCollisionModel collision_model = IiwaCollisionModel::kNoCollision);
+      IiwaCollisionModel collision_model = IiwaCollisionModel::kNoCollision,
+      std::string& joint_type = "bushing");
 
   /// Adds a version of the iiwa with joints that would result in
   /// out-of-plane rotations welded in a fixed orientation, reducing the

@@ -43,6 +43,7 @@ PYBIND11_MODULE(manipulation_station, m) {
       .def("SetupManipulationClassStation",
           &ManipulationStation<T>::SetupManipulationClassStation,
           py::arg("collision_model") = IiwaCollisionModel::kNoCollision,
+          py::arg("joint_type") = "bushing",
           doc.ManipulationStation.SetupManipulationClassStation.doc)
       .def("SetupClutterClearingStation",
           &ManipulationStation<T>::SetupClutterClearingStation,

@@ -272,6 +272,10 @@ def main():
         '--setup', type=str, default='manipulation_class',
         help="The manipulation station setup to simulate. ",
         choices=['manipulation_class', 'clutter_clearing'])
+    parser.add_argument(
+        '--joint_type', type=str, default='bushing',
+        help="Joint type to attach between gripper and tool. ",
+        choices=['bushing', 'weld'])
     MeshcatVisualizer.add_argparse_argument(parser)
     args = parser.parse_args()
 
@@ -293,11 +297,11 @@ def main():
 
         # Initializes the chosen station type.
         if args.setup == 'manipulation_class':
-            station.SetupManipulationClassStation()
-            station.AddManipulandFromFile(
-                ("drake/examples/manipulation_station/models/"
-                 "061_foam_brick.sdf"),
-                RigidTransform(RotationMatrix.Identity(), [0.6, 0, 0]))
+            if (args.joint_type == 'weld'):
+                station.SetupManipulationClassStation(joint_type = "weld")
+            else:
+                station.SetupManipulationClassStation(joint_type = "bushing")
+
         elif args.setup == 'clutter_clearing':
             station.SetupClutterClearingStation()
             ycb_objects = CreateClutterClearingYcbObjectList()
