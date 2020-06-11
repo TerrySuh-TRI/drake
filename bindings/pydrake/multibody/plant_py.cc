@@ -1028,6 +1028,28 @@ PYBIND11_MODULE(plant, m) {
       py::keep_alive<3, 1>(),
       doc.ConnectContactResultsToDrakeVisualizer.doc_3args);
 
+  m.def(
+      "ConnectContactResultsToDrakeVisualizer",
+      [](systems::DiagramBuilder<double>* builder,
+          const MultibodyPlant<double>& plant, 
+          const systems::OutputPort<double>& contact_results_port,
+          lcm::DrakeLcmInterface* lcm) {
+        return drake::multibody::ConnectContactResultsToDrakeVisualizer(
+            builder, plant, contact_results_port, lcm);
+      },
+      py::arg("builder"), py::arg("plant"), py::arg("contact_results_port"),
+      py::arg("lcm") = nullptr,
+      py_reference,
+      // Keep alive, ownership: `return` keeps `builder` alive.
+      py::keep_alive<0, 1>(),
+      // Keep alive, transitive: `plant` keeps `builder` alive.
+      py::keep_alive<2, 1>(),
+      // Keep alive, transitive: `contact_results_port` keeps `builder` alive.
+      py::keep_alive<3, 1>(),
+      // Keep alive, transitive: `lcm` keeps `builder` alive.
+      py::keep_alive<4, 1>(),
+      doc.ConnectContactResultsToDrakeVisualizer.doc_3args);
+
   py::class_<PropellerInfo>(m, "PropellerInfo", doc.PropellerInfo.doc)
       .def(py::init<const BodyIndex&, const math::RigidTransform<double>&,
                double, double>(),

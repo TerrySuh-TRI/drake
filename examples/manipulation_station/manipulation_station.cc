@@ -246,7 +246,7 @@ void ManipulationStation<T>::SetupClutterClearingStation(
 
 template <typename T>
 void ManipulationStation<T>::SetupManipulationClassStation(
-    IiwaCollisionModel collision_model, std::string& joint_type) {
+    IiwaCollisionModel collision_model, const std::string& joint_type) {
   DRAKE_DEMAND(setup_ == Setup::kNone);
   setup_ = Setup::kManipulationClass;
 
@@ -274,8 +274,8 @@ void ManipulationStation<T>::SetupManipulationClassStation(
     const std::string sdf_path = FindResourceOrThrow(
       "drake/examples/manipulation_station/models/simple_squeegee.sdf");
     RigidTransform<double> X_ET(RollPitchYaw<double>(0.,0.,0.),
-     Vector3d(0.0, 0.0, 0.2));
-    const auto grip_frame = plant_->GetFrameByName("grip_frame")
+     Vector3d(0.0, 0.0, 0.0));
+    const auto& grip_frame = plant_->GetFrameByName("grip_frame");
     
     if (joint_type == "bushing") {
 
@@ -286,17 +286,16 @@ void ManipulationStation<T>::SetupManipulationClassStation(
 
       // Set Freebody Pose away from the world....
       const auto indices = plant_->GetBodyIndices(new_model);
-      DRAKE_DEMAND(indices.size() == 1);
       object_ids_.push_back(indices[0]);
-      const RigidTransform<double> X_WObject(Vector3d(0.5, 0.0, 0.1)); 
+      const RigidTransform<double> X_WObject(Vector3d(0.53, 0.0, 0.53)); 
       object_poses_.push_back(X_WObject);
 
 
       // Declare gains and damping parameters for force element  
       const double k_xyz = 1000.0;
       const double d_xyz = 100.0;
-      const double k_rpy = 2.0;
-      const double d_rpy = 0.2;
+      const double k_rpy = 1.0;
+      const double d_rpy = 0.1;
 
       const Vector3d force_stiffness_constants{k_xyz, k_xyz, k_xyz};
       const Vector3d force_damping_constants{d_xyz, d_xyz, d_xyz};
@@ -305,13 +304,13 @@ void ManipulationStation<T>::SetupManipulationClassStation(
 
       // Add force element between object frame and tool frame 
       plant_->template AddForceElement<LinearBushingRollPitchYaw>(
-        tool_frame, child_frame, 
+        grip_frame, tool_frame, 
         torque_stiffness_constants, torque_damping_constants, 
         force_stiffness_constants, force_damping_constants);
     }
-
     else if (joint_type == "weld") {
-      internal::AddAndWeldModelFrom(sdf_path, "tool", grip_frame, "base_link", X_ET, plant_);
+      internal::AddAndWeldModelFrom(sdf_path, "tool", grip_frame, 
+        "handle", X_ET, plant_);
     }
   }
 
@@ -509,7 +508,7 @@ void ManipulationStation<T>::Finalize(
     case Setup::kManipulationClass: {
       // Set the initial positions of the IIWA to a comfortable configuration
       // inside the workspace of the station.
-      q0_iiwa << 0, 0.2, 0, -1.75, 0, 1.0, 0;
+      q0_iiwa << 0.0, 0.2, 0.0, -1.2, 0, 1.5, 0;
 
       std::uniform_real_distribution<symbolic::Expression> x(0.4, 0.65),
           y(-0.35, 0.35), z(0, 0.05);

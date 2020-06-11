@@ -8,7 +8,8 @@ from pydrake.examples.manipulation_station import (
     ManipulationStation, ManipulationStationHardwareInterface,
     CreateClutterClearingYcbObjectList)
 from pydrake.geometry import ConnectDrakeVisualizer
-from pydrake.multibody.plant import MultibodyPlant
+from pydrake.multibody.plant import (
+    MultibodyPlant, ConnectContactResultsToDrakeVisualizer)
 from pydrake.manipulation.planner import (
     DifferentialInverseKinematicsParameters)
 from pydrake.math import RigidTransform, RollPitchYaw, RotationMatrix
@@ -311,6 +312,9 @@ def main():
         station.Finalize()
         ConnectDrakeVisualizer(builder, station.get_scene_graph(),
                                station.GetOutputPort("pose_bundle"))
+        ConnectContactResultsToDrakeVisualizer(builder, 
+            station.get_mutable_multibody_plant(),
+            station.GetOutputPort("contact_results"))
         if args.meshcat:
             meshcat = builder.AddSystem(MeshcatVisualizer(
                 station.get_scene_graph(), zmq_url=args.meshcat))

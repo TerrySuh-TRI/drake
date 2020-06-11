@@ -101,7 +101,7 @@
       <pose frame='body'>0 0 0 0 0 0</pose>
     </frame>
     <frame name='grip_frame'>
-      <pose frame='body'>0 0 0.2 1.5707 1.5707 0 </pose>
+      <pose frame='body'>0 0.1 0.0 1.5707 1.5707 0 </pose>
     </frame>
     <link name='left_finger'>
       <pose frame=''>-0.008 0.025 0 0 -0 0</pose>
