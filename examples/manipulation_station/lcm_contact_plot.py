@@ -2,17 +2,37 @@ from pydrake.lcm import (
     DrakeLcm,
     DrakeLcmInterface, Subscriber
 )
-import drake.lcmt_polynomial
-import drake.lcmt_contact_results_for_viz
-import drake.lcmt_force_torque
 
-mat = drake.lcmt_polynomial_matrix()
-mat.polynomials.append(drake.lcmt_polynomial())
-mat.encode()
+import drake
+import time
 
-mat = drake.lcmt_force_torque()
-mat.timestamp = 32
-mat.encode()
+class LCMSubscriber():
+    
+    def __init__(self):
+        self.lcm = DrakeLcm()
+        self.lcm_type = drake.lcmt_contact_results_for_viz()
+        self.clear()
+        self.lcm.Subscribe(channel ="CONTACT_RESULTS", handler=self._handler)
 
-mat = drake.lcmt_contact_results_for_viz()
-mat.timestamp = 32
+    def clear(self):
+        self.count = 0
+        self.raw = []
+        self.message = self.lcm_type
+
+    def _handler(self, msg):
+        self.count += 1
+        self.raw = msg 
+        self.message = self.lcm_type.decode(msg)
+
+        print(self.message.point_pair_contact_info[2].body1_name)
+        print(self.message.point_pair_contact_info[2].body2_name)
+        print(self.message.point_pair_contact_info[2].normal)
+
+if __name__ == '__main__':
+    L = LCMSubscriber()
+    while(L.lcm.HandleSubscriptions(1000)):
+        pass
+
+
+
+
