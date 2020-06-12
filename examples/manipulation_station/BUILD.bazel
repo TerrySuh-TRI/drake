@@ -176,8 +176,8 @@ drake_py_binary(
 
 
 drake_py_binary(
-    name = "lcm_contact_plot",
-    srcs = ["lcm_contact_plot.py"],
+    name = "log_lcm_contact",
+    srcs = ["log_lcm_contact.py"],
     add_test_rule = 1,
     tags = vtk_test_tags(),
     test_rule_args = ["--test --target_realtime_rate=0.0 --duration=0.1"],
@@ -186,6 +186,19 @@ drake_py_binary(
         "//bindings/pydrake",
     ],
 )
+
+drake_py_binary(
+    name = "plot_contact",
+    srcs = ["plot_contact.py"],
+    add_test_rule = 1,
+    tags = vtk_test_tags(),
+    test_rule_args = ["--test --target_realtime_rate=0.0 --duration=0.1"],
+    test_rule_timeout = "moderate",  # Frequently exceeds short timeout in dbg.
+    deps = [
+        "//bindings/pydrake"
+    ],
+)
+
 
 drake_py_binary(
     name = "end_effector_teleop_sliders",
